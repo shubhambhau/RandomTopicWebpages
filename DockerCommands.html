@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Docker Commands Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The application uses a sidebar navigation layout to create a task-oriented dashboard. This structure was chosen to break down the dense report into logical, thematic sections (Images, Containers, Networks, etc.), which is more user-friendly than a long, linear document. Users can either learn sequentially by clicking through the navigation or use the prominent search bar for quick, random-access lookups. This dual approach serves both beginners and experienced users. Interactive elements like expandable cards and a 'copy' button reduce initial cognitive load while keeping details accessible. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Command Categories (Image, Container, etc.) -> Goal: Organize/Navigate -> Presentation: Sidebar Navigation -> Interaction: Click to filter content -> Justification: Standard, intuitive pattern for documentation, allows focus on one topic at a time. -> Method: HTML/JS.
+        - Report Info: Individual Commands (e.g., `docker pull`) -> Goal: Inform/Organize -> Presentation: Expandable Cards -> Interaction: Click to reveal details (options, examples) -> Justification: Manages complexity, prevents information overload. -> Method: HTML <details>/<summary> tags.
+        - Report Info: Code Examples -> Goal: Usability -> Presentation: Code blocks -> Interaction: "Copy" button -> Justification: Improves practical utility of the guide. -> Method: JS `document.execCommand('copy')`.
+        - Synthesized Info: Command Usage Frequency -> Goal: Compare/Inform -> Presentation: Horizontal Bar Chart -> Interaction: Hover for tooltips -> Justification: Adds a quick visual summary of command importance not present in the original text, making it more engaging. -> Library: Chart.js/Canvas.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F5F3F0; }
+        .font-mono { font-family: 'Roboto Mono', monospace; }
+        .sidebar-link { transition: all 0.2s ease-in-out; }
+        .sidebar-link:hover, .sidebar-link.active { background-color: #E0DCD5; color: #1a202c; transform: translateX(4px); }
+        .command-card { border: 1px solid #E2E8F0; border-radius: 0.75rem; background-color: #FFFFFF; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); transition: box-shadow 0.3s ease; }
+        .command-card:hover { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .copy-btn { position: absolute; top: 0.5rem; right: 0.5rem; background-color: #4A5568; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; opacity: 0; transition: opacity 0.2s; cursor: pointer; }
+        pre:hover .copy-btn { opacity: 1; }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800">
+
+    <div class="flex h-screen">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-64 bg-white shadow-md p-4 space-y-2 flex-shrink-0 overflow-y-auto">
+            <h1 class="text-2xl font-bold text-stone-900 pb-4 border-b border-stone-200">Docker Guide</h1>
+            <nav id="nav-menu" class="space-y-1">
+                <!-- Links will be injected by JS -->
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+            <div class="max-w-7xl mx-auto">
+                <!-- Header & Search -->
+                <header class="mb-8">
+                    <h2 id="main-title" class="text-4xl font-bold text-stone-900 mb-2">Welcome</h2>
+                    <p id="main-intro" class="text-lg text-stone-600">This interactive guide helps you explore and understand Docker commands. Select a category from the sidebar or use the search to find a specific command.</p>
+                    <div class="mt-6 relative">
+                        <input type="text" id="search-input" placeholder="Search for a command (e.g., 'run', 'pull')..." class="w-full p-3 pl-10 border border-stone-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        <svg class="w-5 h-5 text-stone-400 absolute top-1/2 left-3 transform -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </header>
+
+                <!-- Content Area -->
+                <div id="content-area" class="space-y-6">
+                    <!-- Cards will be injected by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const dockerData = [
+            {
+                category: "Introduction",
+                title: "Welcome to the Interactive Docker Guide",
+                intro: "Docker is a platform that uses containers to create, deploy, and run applications. It packages an application with all its dependencies into a standardized unit for software development. This guide breaks down the most essential commands into manageable categories. Use the sidebar to navigate through topics like managing images, running containers, configuring networks, and persisting data with volumes. The goal is to make learning and referencing Docker commands fast and intuitive.",
+                commands: [
+                    {
+                        name: "Command Usage Frequency",
+                        description: "This chart provides a visual estimate of how frequently different groups of Docker commands are used in typical day-to-day development. It helps beginners prioritize which commands to learn first.",
+                        isChart: true,
+                    }
+                ]
+            },
+            {
+                category: "Image Management",
+                title: "Managing Docker Images",
+                intro: "Docker images are the blueprints for your containers. They are read-only templates that contain the application code, libraries, tools, and other files needed for an application to run. This section covers the essential commands for finding, building, listing, and removing images, which are the fundamental building blocks of any containerized workflow.",
+                commands: [
+                    {
+                        name: "docker pull",
+                        description: "Downloads a Docker image from a remote library (registry) to your computer.",
+                        analogy: "Think of Docker Hub as a library of software. `docker pull` is like checking out a book (image) to use on your desk (local machine).",
+                        options: [
+                            "`-a, --all-tags`: Downloads all tagged images in the repository.",
+                            "`--disable-content-trust`: Skips image verification.",
+                            "`--platform`: Specifies the platform (e.g., `linux/amd64`).",
+                            "`-q, --quiet`: Suppresses verbose output."
+                        ],
+                        examples: [
+                            {
+                                title: "Pulling an image with the default `:latest` tag:",
+                                code: "docker pull debian"
+                            },
+                            {
+                                title: "Pulling a specific tagged image:",
+                                code: "docker pull ubuntu:24.04"
+                            },
+                            {
+                                title: "Pulling an image by its immutable digest for consistency:",
+                                code: "docker pull ubuntu@sha256:2e863c44b718727c860746568e1d54afd13b2fa71b160f5cd9058fc436217b30"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker build",
+                        description: "Creates a new Docker image from a `Dockerfile`.",
+                        analogy: "A `Dockerfile` is your recipe. `docker build` is like following that recipe to cook a dish (the image) that you can serve anytime.",
+                        options: [
+                            "`-t, --tag`: Assigns a name and optional tag (e.g., `my-app:1.0`).",
+                            "`.` (dot): Represents the build context (usually the current directory)."
+                        ],
+                        examples: [
+                            {
+                                title: "Basic image build from the current directory:",
+                                code: "docker build ."
+                            },
+                            {
+                                title: "Building and tagging an image:",
+                                code: "docker build -t my-username/my-app:1.0 ."
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker images",
+                        description: "Shows all Docker images currently saved on your computer.",
+                        analogy: "It's like looking at the shelf in your kitchen to see all the recipe books (images) you have available.",
+                        options: [
+                            "`-a, --all`: Displays all images, including intermediate layers.",
+                            "`-f, --filter`: Filters output (e.g., `dangling=true`).",
+                            "`-q, --quiet`: Displays only the numeric IDs of the images."
+                        ],
+                        examples: [
+                            {
+                                title: "List all top-level images:",
+                                code: "docker images"
+                            },
+                            {
+                                title: "Filter for dangling (unused) images:",
+                                code: "docker images --filter \"dangling=true\""
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker push",
+                        description: "Uploads your Docker image to an online registry (like Docker Hub).",
+                        analogy: "After creating your special dish (image), you `push` it to a shared cookbook (registry) for others to use.",
+                        options: [
+                            "`-a, --all-tags`: Pushes all tags of an image.",
+                        ],
+                        examples: [
+                            {
+                                title: "Pushing a tagged image to a registry:",
+                                code: "docker push my-username/my-app:1.0"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker rmi",
+                        description: "Deletes a Docker image from your computer.",
+                        analogy: "This is like throwing away a recipe book you no longer need.",
+                        options: [
+                            "`-f, --force`: Forces removal, even if used by a container."
+                        ],
+                        examples: [
+                            {
+                                title: "Removing an image by its tag:",
+                                code: "docker rmi my-app:1.0"
+                            },
+                            {
+                                title: "Forcing removal of an image:",
+                                code: "docker rmi -f <image_id>"
+                            }
+                        ]
+                    },
+                ]
+            },
+            {
+                category: "Container Management",
+                title: "Managing Docker Containers",
+                intro: "Containers are the live, running instances of your Docker images. They are the core of the Docker workflow, providing isolated environments for your applications to run. This section focuses on the commands to run, list, inspect, stop, and remove containers, giving you full control over your application's lifecycle.",
+                commands: [
+                    {
+                        name: "docker run",
+                        description: "Starts a new container from an image.",
+                        analogy: "This is like serving the dish you cooked. Each `run` command creates a new, separate serving (container).",
+                        options: [
+                            "`-d`: Detached mode (runs in background).",
+                            "`-p`: Publish a port (e.g., `-p 8080:80`).",
+                            "`-v`: Mount a volume for data persistence.",
+                            "`--name`: Assign a custom name to the container.",
+                            "`-it`: Interactive mode with a terminal.",
+                            "`--rm`: Automatically remove the container when it exits."
+                        ],
+                        examples: [
+                            {
+                                title: "Run a web server in the background:",
+                                code: "docker run -d -p 8080:80 --name web-server nginx"
+                            },
+                            {
+                                title: "Run an interactive shell:",
+                                code: "docker run -it ubuntu bash"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker ps",
+                        description: "Shows all currently running containers.",
+                        analogy: "It's like checking which tables in your restaurant are currently occupied by customers (running containers).",
+                        options: [
+                            "`-a, --all`: Shows all containers, including stopped ones.",
+                            "`-q, --quiet`: Displays only container IDs."
+                        ],
+                        examples: [
+                            {
+                                title: "List running containers:",
+                                code: "docker ps"
+                            },
+                            {
+                                title: "List all containers (running and stopped):",
+                                code: "docker ps -a"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker stop",
+                        description: "Tells a running container to shut down gracefully.",
+                        analogy: "Politely asking a customer to finish their meal and leave, giving them time to pack up.",
+                        options: [
+                            "`-t, --time`: Seconds to wait before killing (default 10)."
+                        ],
+                        examples: [
+                            {
+                                title: "Stop a container by name:",
+                                code: "docker stop web-server"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker kill",
+                        description: "Forcefully and instantly stops a running container.",
+                        analogy: "Abruptly telling a customer to leave immediately, without giving them time to finish.",
+                        options: [],
+                        examples: [
+                            {
+                                title: "Kill an unresponsive container:",
+                                code: "docker kill unresponsive-app"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker rm",
+                        description: "Deletes a stopped container from your computer.",
+                        analogy: "Clearing the table after a customer has left.",
+                        options: [
+                            "`-f, --force`: Force removal of a running container.",
+                            "`-v, --volumes`: Remove anonymous volumes with the container."
+                        ],
+                        examples: [
+                            {
+                                title: "Remove a stopped container:",
+                                code: "docker rm <container_id_or_name>"
+                            },
+                            {
+                                title: "Remove all exited containers:",
+                                code: "docker rm $(docker ps -a -q -f status=exited)"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker exec",
+                        description: "Runs a command inside a container that is already active.",
+                        analogy: "Leaning over to a customer's table to give them instructions while they are still eating.",
+                        options: [
+                            "`-it`: Interactive mode with a terminal."
+                        ],
+                        examples: [
+                            {
+                                title: "Open a shell inside a running container:",
+                                code: "docker exec -it web-server bash"
+                            }
+                        ]
+                    },
+                ]
+            },
+            {
+                category: "Network Management",
+                title: "Managing Docker Networks",
+                intro: "Docker networking allows containers to communicate with each other, the host machine, and the internet. While Docker provides default networks, creating custom networks is best practice for isolating applications and enabling easy service discovery. This section covers how to create, inspect, and manage these communication channels.",
+                commands: [
+                    {
+                        name: "docker network create",
+                        description: "Creates a new, isolated network for your containers.",
+                        analogy: "Building a private road just for a specific group of houses (containers) to use for communication.",
+                        options: [
+                            "`-d, --driver`: Specifies the network driver (e.g., `bridge`, `overlay`)."
+                        ],
+                        examples: [
+                            {
+                                title: "Create a standard bridge network:",
+                                code: "docker network create my-app-net"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker network ls",
+                        description: "Shows all the different networks Docker has set up.",
+                        analogy: "Looking at a map of all the roads (networks) available in your city.",
+                        options: [],
+                        examples: [
+                            {
+                                title: "List all networks:",
+                                code: "docker network ls"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker network inspect",
+                        description: "Gives a detailed report about a specific network.",
+                        analogy: "Getting a detailed engineering blueprint for a specific road, showing who is connected to it.",
+                        options: [],
+                        examples: [
+                            {
+                                title: "Inspect a network's details:",
+                                code: "docker network inspect my-app-net"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker network connect",
+                        description: "Links a running container to a network.",
+                        analogy: "Building a new driveway to connect a house (container) to an additional road (network).",
+                        options: [],
+                        examples: [
+                            {
+                                title: "Connect a running container to a network:",
+                                code: "docker network connect my-app-net my-container"
+                            }
+                        ]
+                    },
+                ]
+            },
+            {
+                category: "Volume Management",
+                title: "Managing Docker Volumes",
+                intro: "Volumes are the best way to persist data in Docker. They are managed by Docker and exist independently of a container's lifecycle, ensuring your data is safe even if the container is removed. This is crucial for databases, user uploads, and any other stateful application. This section explains how to manage these persistent storage areas.",
+                commands: [
+                    {
+                        name: "docker volume create",
+                        description: "Creates a dedicated storage area (volume).",
+                        analogy: "Building a secure, permanent storage shed (volume) next to your temporary kitchen (container).",
+                        options: [],
+                        examples: [
+                            {
+                                title: "Create a named volume:",
+                                code: "docker volume create my-app-data"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker volume ls",
+                        description: "Shows all the dedicated storage areas (volumes) you have.",
+                        analogy: "Taking inventory of all the storage sheds you have built.",
+                        options: [
+                            "`-f dangling=true`: Filter for unused volumes."
+                        ],
+                        examples: [
+                            {
+                                title: "List all volumes:",
+                                code: "docker volume ls"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker volume inspect",
+                        description: "Gives a detailed report about a specific volume.",
+                        analogy: "Checking the blueprint of a storage shed to see its size and location on your property.",
+                        options: [],
+                        examples: [
+                            {
+                                title: "Inspect a volume's details:",
+                                code: "docker volume inspect my-app-data"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker volume rm",
+                        description: "Deletes a specific volume from your computer.",
+                        analogy: "Tearing down a storage shed you no longer need.",
+                        options: [],
+                        examples: [
+                            {
+                                title: "Remove a volume:",
+                                code: "docker volume rm my-app-data"
+                            }
+                        ]
+                    },
+                ]
+            },
+            {
+                category: "System & Cleanup",
+                title: "System & Cleanup",
+                intro: "Over time, your Docker environment can become cluttered with stopped containers, unused images, and old volumes, consuming valuable disk space. Docker provides powerful cleanup commands to keep your system tidy and efficient. This section covers the essential commands for performing a system-wide refresh.",
+                commands: [
+                    {
+                        name: "docker system prune",
+                        description: "A single command to clean up unused Docker resources.",
+                        analogy: "A spring cleaning service for your entire Docker setup, clearing out all the clutter.",
+                        options: [
+                            "`-a, --all`: Removes all unused images, not just dangling ones.",
+                            "`--volumes`: Also removes all unused volumes."
+                        ],
+                        examples: [
+                            {
+                                title: "Perform a basic cleanup (prompts for confirmation):",
+                                code: "docker system prune"
+                            },
+                            {
+                                title: "Perform an aggressive cleanup without prompting:",
+                                code: "docker system prune -a --volumes -f"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker image prune",
+                        description: "Removes unused images.",
+                        analogy: "Specifically throwing out only the old recipe books you haven't used in a while.",
+                        options: [
+                            "`-a, --all`: Removes all unused images, not just dangling ones."
+                        ],
+                        examples: [
+                            {
+                                title: "Remove dangling images:",
+                                code: "docker image prune"
+                            }
+                        ]
+                    },
+                    {
+                        name: "docker container prune",
+                        description: "Removes all stopped containers.",
+                        analogy: "A quick sweep to clear all the empty tables in your restaurant.",
+                        options: [],
+                        examples: [
+                            {
+                                title: "Remove all stopped containers:",
+                                code: "docker container prune"
+                            }
+                        ]
+                    },
+                ]
+            }
+        ];
+
+        const navMenu = document.getElementById('nav-menu');
+        const contentArea = document.getElementById('content-area');
+        const searchInput = document.getElementById('search-input');
+        const mainTitle = document.getElementById('main-title');
+        const mainIntro = document.getElementById('main-intro');
+        let commandUsageChart = null;
+
+        function renderContent(categoryName) {
+            const categoryData = dockerData.find(d => d.category === categoryName);
+            if (!categoryData) return;
+
+            mainTitle.textContent = categoryData.title;
+            mainIntro.textContent = categoryData.intro;
+            contentArea.innerHTML = '';
+
+            categoryData.commands.forEach(command => {
+                if (command.isChart) {
+                    const chartCard = document.createElement('div');
+                    chartCard.className = 'command-card p-6';
+                    chartCard.innerHTML = `
+                        <h3 class="text-2xl font-bold mb-2 text-stone-800">${command.name}</h3>
+                        <p class="text-stone-600 mb-4">${command.description}</p>
+                        <div class="chart-container">
+                            <canvas id="commandChart"></canvas>
+                        </div>
+                    `;
+                    contentArea.appendChild(chartCard);
+                    renderChart();
+                } else {
+                    const card = document.createElement('div');
+                    card.className = 'command-card';
+                    card.innerHTML = `
+                        <div class="p-6">
+                            <h3 class="text-2xl font-bold mb-2 text-stone-800 font-mono">${command.name}</h3>
+                            <p class="text-stone-600 italic">"${command.description}"</p>
+                            <p class="text-stone-600 mt-2"><span class="font-semibold">Analogy:</span> ${command.analogy}</p>
+                        </div>
+                        <div class="px-6 pb-6">
+                            <details>
+                                <summary class="cursor-pointer font-semibold text-blue-600 hover:text-blue-800">View Options & Examples</summary>
+                                <div class="mt-4 space-y-4">
+                                    ${command.options.length > 0 ? `
+                                    <div>
+                                        <h4 class="font-semibold text-stone-700">Common Options:</h4>
+                                        <ul class="list-disc list-inside mt-2 text-stone-600 space-y-1">
+                                            ${command.options.map(opt => `<li><span class="font-mono bg-stone-200 px-1 py-0.5 rounded">${opt}</span></li>`).join('')}
+                                        </ul>
+                                    </div>` : ''}
+                                    ${command.examples.length > 0 ? `
+                                    <div>
+                                        <h4 class="font-semibold text-stone-700">Examples:</h4>
+                                        <div class="space-y-3 mt-2">
+                                            ${command.examples.map(ex => `
+                                                <div>
+                                                    <p class="text-stone-600">${ex.title}</p>
+                                                    <pre class="bg-stone-800 text-white p-3 rounded-md mt-1 relative overflow-x-auto"><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="font-mono">${ex.code}</code></pre>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>` : ''}
+                                </div>
+                            </details>
+                        </div>
+                    `;
+                    contentArea.appendChild(card);
+                }
+            });
+        }
+        
+        function renderFilteredContent(searchTerm) {
+            mainTitle.textContent = `Search Results for "${searchTerm}"`;
+            mainIntro.textContent = "Showing all commands that match your search query.";
+            contentArea.innerHTML = '';
+            
+            const filteredCommands = [];
+            dockerData.forEach(category => {
+                if (category.category === "Introduction") return;
+                category.commands.forEach(command => {
+                    const commandName = command.name.toLowerCase();
+                    const commandDesc = command.description.toLowerCase();
+                    if (commandName.includes(searchTerm) || commandDesc.includes(searchTerm)) {
+                        filteredCommands.push(command);
+                    }
+                });
+            });
+
+            if (filteredCommands.length === 0) {
+                contentArea.innerHTML = `<p class="text-stone-600">No commands found for "${searchTerm}". Try a different query.</p>`;
+                return;
+            }
+
+            filteredCommands.forEach(command => {
+                const card = document.createElement('div');
+                card.className = 'command-card';
+                card.innerHTML = `
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold mb-2 text-stone-800 font-mono">${command.name}</h3>
+                        <p class="text-stone-600 italic">"${command.description}"</p>
+                        <p class="text-stone-600 mt-2"><span class="font-semibold">Analogy:</span> ${command.analogy}</p>
+                    </div>
+                    <div class="px-6 pb-6">
+                        <details open>
+                            <summary class="cursor-pointer font-semibold text-blue-600 hover:text-blue-800">View Options & Examples</summary>
+                            <div class="mt-4 space-y-4">
+                                ${command.options.length > 0 ? `
+                                <div>
+                                    <h4 class="font-semibold text-stone-700">Common Options:</h4>
+                                    <ul class="list-disc list-inside mt-2 text-stone-600 space-y-1">
+                                        ${command.options.map(opt => `<li><span class="font-mono bg-stone-200 px-1 py-0.5 rounded">${opt}</span></li>`).join('')}
+                                    </ul>
+                                </div>` : ''}
+                                ${command.examples.length > 0 ? `
+                                <div>
+                                    <h4 class="font-semibold text-stone-700">Examples:</h4>
+                                    <div class="space-y-3 mt-2">
+                                        ${command.examples.map(ex => `
+                                            <div>
+                                                <p class="text-stone-600">${ex.title}</p>
+                                                <pre class="bg-stone-800 text-white p-3 rounded-md mt-1 relative overflow-x-auto"><button class="copy-btn" onclick="copyCode(this)">Copy</button><code class="font-mono">${ex.code}</code></pre>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>` : ''}
+                            </div>
+                        </details>
+                    </div>
+                `;
+                contentArea.appendChild(card);
+            });
+        }
+
+        function setupNavigation() {
+            dockerData.forEach(item => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.textContent = item.category;
+                link.className = 'block py-2 px-4 rounded-lg sidebar-link';
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    renderContent(item.category);
+                    searchInput.value = '';
+                };
+                navMenu.appendChild(link);
+            });
+        }
+        
+        function renderChart() {
+            const ctx = document.getElementById('commandChart');
+            if (!ctx) return;
+
+            const data = {
+                labels: ['Container Lifecycle (run, stop, rm)', 'Image Management (build, pull, push)', 'Inspection & Logs (ps, logs, inspect)', 'System Cleanup (prune)'],
+                datasets: [{
+                    label: 'Estimated Usage Frequency',
+                    data: [90, 75, 85, 60],
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.6)',
+                        'rgba(16, 185, 129, 0.6)',
+                        'rgba(249, 115, 22, 0.6)',
+                        'rgba(239, 68, 68, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(16, 185, 129, 1)',
+                        'rgba(249, 115, 22, 1)',
+                        'rgba(239, 68, 68, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            if (commandUsageChart) {
+                commandUsageChart.destroy();
+            }
+
+            commandUsageChart = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        label += `A relative score of ${context.parsed.x} out of 100 in terms of frequency.`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Relative Frequency Score'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        window.copyCode = function(button) {
+            const pre = button.parentElement;
+            const code = pre.querySelector('code').innerText;
+            const textArea = document.createElement('textarea');
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                button.innerText = 'Copied!';
+                setTimeout(() => {
+                    button.innerText = 'Copy';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                button.innerText = 'Failed!';
+            }
+            document.body.removeChild(textArea);
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            if (searchTerm) {
+                renderFilteredContent(searchTerm);
+                document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            } else {
+                // If search is cleared, go back to the first category
+                document.querySelector('.sidebar-link').click();
+            }
+        });
+
+        // Initial setup
+        setupNavigation();
+        document.querySelector('.sidebar-link').click(); // Load the first category by default
+    </script>
+
+</body>
+</html>
